@@ -10,7 +10,8 @@ name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
 # Conexión y opciones de frutas
-session = get_active_session()
+cnx = st.connection("snowflake")
+session = cnx.session()
 
 fruit_rows = (
     session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
