@@ -40,16 +40,8 @@ if ingredients_list:
 
         try:
             smoothiefroot_response = requests.get(
-                "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen),
-                headers={"Accept": "application/json"},
-                timeout=15
-            )
-            smoothiefroot_response.raise_for_status()
-
-            st.dataframe(
-                data=smoothiefroot_response.json(),
-                width="stretch"
-            )
+                "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen)
+               sf_df = st.datafram(data=smoothiefroot_responde.json(), use_container_width=True)
 
         except requests.HTTPError as error:
             response = error.response
