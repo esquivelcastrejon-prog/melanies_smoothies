@@ -7,67 +7,75 @@ from snowflake.snowpark.functions import col
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
+# Nombre del pedido
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
-
-cnx = st.connection("snowflake")
-session = cnx.session()
-
-# Cargar el nombre visible y el término de búsqueda
-my_dataframe = (
-    session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
-    .select(col("FRUIT_NAME"), col("SEARCH_ON"))
-    st.datafrane(data=my_dataframe, use_container_width=True)
-    st.stop()
 
 # Conexión con Snowflake
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Cargar las opciones de frutas
-fruit_rows = (
+# Cargar FRUIT_NAME y SEARCH_ON desde Snowflake
+my_dataframe = (
     session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
-    .select(col("FRUIT_NAME"))
-    .collect()
+    .select(col("FRUIT_NAME"), col("SEARCH_ON"))
 )
-fruit_names = [row["FRUIT_NAME"] for row in fruit_rows]
 
-# Seleccionar hasta cinco ingredientes
+# Convertir el DataFrame de Snowpark a pandas
+pd_df = pd.DataFrame(my_dataframe.to_pandas())
+
+# Para revisar temporalmente las dos columnas, descomenta esta línea:
+# st.dataframe(pd_df, width="stretch")
+
+# Alimentar el selector con los nombres visibles
+fruit_names = pd_df["FRUIT_NAME"].tolist()
+
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
     fruit_names,
     max_selections=5
 )
 
-# Consultar SmoothieFroot para cada fruta elegida
-ingredients_string = ""
+# Consultar SmoothieFroot usando el valor SEARCH_ON
+ingredients_string = " ".join(ingredients_list)
 
 if ingredients_list:
     for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chosen + " "
+        search_values = pd_df.loc[
+            pd_df["FRUIT_NAME"] == fruit_chosen,
+            "SEARCH_ON"
+        ]
 
+        if search_values.empty or pd.isna(search_values.iloc[0]):
+            st.warning(f"No SEARCH_ON value is set for {fruit_chosen}.")
+            continue
+
+        search_on = str(search_values.iloc[0]).strip()
+
+        st.write(f"The search value for {fruit_chosen} is {search_on}.")
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
         try:
-            fruit_path = quote(fruit_chosen.strip(), safe="")
-            smoothiefroot_response = requests.get(
+            fruit_path = quote(search_on, safe="")
+            response = requests.get(
                 f"https://my.smoothiefroot.com/api/fruit/{fruit_path}",
                 headers={"Accept": "application/json"},
                 timeout=15
             )
-            smoothiefroot_response.raise_for_status()
+            response.raise_for_status()
 
             st.dataframe(
-                data=smoothiefroot_response.json(),
+                data=response.json(),
                 width="stretch"
             )
 
         except requests.HTTPError as error:
-            response = error.response
-            if response is not None:
+            api_response = error.response
+            if api_response is not None:
                 st.error(
                     f"SmoothieFroot returned HTTP "
-                    f"{response.status_code}: {response.text[:300]}"
+                    f"{api_response.status_code}: "
+                    f"{api_response.text[:300]}"
                 )
             else:
                 st.error(f"Could not retrieve SmoothieFroot data: {error}")
@@ -93,7 +101,7 @@ if st.button("Submit Order"):
 
         session.sql(
             insert_stmt,
-            params=[ingredients_string.strip(), name_on_order.strip()]
+            params=[ingredients_string, name_on_order.strip()]
         ).collect()
 
         st.success(
