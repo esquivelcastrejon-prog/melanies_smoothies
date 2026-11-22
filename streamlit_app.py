@@ -9,11 +9,11 @@ st.write("Choose the fruits you want in your custom Smoothie!")
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
-# Conexión con Snowflake configurada en Streamlit Secrets
+# Conexión con Snowflake
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Cargar las opciones de frutas desde Snowflake
+# Cargar las opciones de frutas
 fruit_rows = (
     session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
     .select(col("FRUIT_NAME"))
@@ -21,12 +21,35 @@ fruit_rows = (
 )
 fruit_names = [row["FRUIT_NAME"] for row in fruit_rows]
 
-# Selección de hasta cinco ingredientes
+# Seleccionar hasta cinco ingredientes
 ingredients_list = st.multiselect(
     "Choose up to 5 ingredients:",
     fruit_names,
     max_selections=5
 )
+
+# Mostrar los datos de SmoothieFroot dentro del ciclo
+if ingredients_list:
+    st.subheader("SmoothieFroot nutrition information")
+
+    for fruit_chosen in ingredients_list:
+        try:
+            smoothiefroot_response = requests.get(
+                "https://smoothiefroot.com/api/fruit/watermelon",
+                timeout=15
+            )
+            smoothiefroot_response.raise_for_status()
+
+            st.dataframe(
+                data=smoothiefroot_response.json(),
+                use_container_width=True
+            )
+
+        except requests.RequestException as error:
+            st.error(f"Could not retrieve SmoothieFroot data: {error}")
+
+        except ValueError:
+            st.error("SmoothieFroot returned a response that is not valid JSON.")
 
 # Registrar el pedido
 if st.button("Submit Order"):
@@ -52,22 +75,3 @@ if st.button("Submit Order"):
             f"Your Smoothie is ordered, {name_on_order.strip()}!",
             icon="✅"
         )
-
-# Consultar y mostrar información de la sandía desde SmoothieFroot
-st.subheader("Watermelon nutrition information")
-
-try:
-    smoothiefruit_response = requests.get(
-        "https://my.smoothiefroot.com/api/fruit/watermelon",
-        timeout=15
-    )
-    smoothiefruit_response.raise_for_status()
-    smoothiefruit_data = smoothiefruit_response.json()
-
-    st.dataframe([smoothiefruit_data], use_container_width=True)
-
-except requests.RequestException as error:
-    st.error(f"Could not retrieve information from SmoothieFroot: {error}")
-
-except ValueError:
-    st.error("SmoothieFroot returned a response that is not valid JSON.")
