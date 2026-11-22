@@ -14,7 +14,7 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Cargar el nombre visible y el término que usa la API
+# Cargar el nombre visible y el término de búsqueda de la API
 my_dataframe = (
     session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
     .select(col("FRUIT_NAME"), col("SEARCH_ON"))
@@ -84,11 +84,13 @@ if ingredients_list:
                 )
 
         except requests.HTTPError as error:
-            response = error.response
-            if response is not None:
+            error_response = error.response
+
+            if error_response is not None:
                 st.error(
-                    f"SmoothieFroot returned HTTP {response.status_code}: "
-                    f"{response.text[:300]}"
+                    f"SmoothieFroot returned HTTP "
+                    f"{error_response.status_code}: "
+                    f"{error_response.text[:300]}"
                 )
             else:
                 st.error(f"Could not retrieve SmoothieFroot data: {error}")
@@ -97,7 +99,9 @@ if ingredients_list:
             st.error(f"Could not retrieve SmoothieFroot data: {error}")
 
         except (ValueError, TypeError) as error:
-            st.error(f"Could not read SmoothieFroot's JSON response: {error}")
+            st.error(
+                f"Could not read SmoothieFroot's JSON response: {error}"
+            )
 
 # Registrar el pedido
 if st.button("Submit Order"):
@@ -106,8 +110,11 @@ if st.button("Submit Order"):
     elif not ingredients_list:
         st.warning("Please choose at least one ingredient.")
     else:
-        # Conserva los nombres visibles y el orden seleccionado
-        ingredients_string = " ".join(ingredients_list)
+        # El espacio final es necesario para el check del taller.
+        # El orden de los ingredientes también debe conservarse.
+        ingredients_string = "".join(
+            f"{fruit} " for fruit in ingredients_list
+        )
 
         insert_stmt = """
             INSERT INTO SMOOTHIES.PUBLIC.ORDERS
