@@ -1,14 +1,23 @@
 import streamlit as st
 import requests
+import pandas as pd
 from urllib.parse import quote
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
-# Nombre del pedido
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
+
+cnx = st.connection("snowflake")
+session = cnx.session()
+
+# Cargar el nombre visible y el término de búsqueda
+my_dataframe = (
+    session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
+    .select(col("FRUIT_NAME"), col("SEARCH_ON"))
+)
 
 # Conexión con Snowflake
 cnx = st.connection("snowflake")
