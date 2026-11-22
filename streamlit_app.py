@@ -35,15 +35,21 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         try:
             smoothiefroot_response = requests.get(
-                "https://smoothiefroot.com/api/fruit/watermelon",
-                timeout=15
-            )
-            smoothiefroot_response.raise_for_status()
+    "https://my.smoothiefroot.com/api/fruit/watermelon",
+    headers={"Accept": "application/json"},
+    timeout=15
+)
 
-            st.dataframe(
-                data=smoothiefroot_response.json(),
-                use_container_width=True
-            )
+if smoothiefroot_response.ok:
+    st.dataframe(
+        data=smoothiefroot_response.json(),
+        width="stretch"
+    )
+else:
+    st.error(
+        f"SmoothieFroot respondió HTTP {smoothiefroot_response.status_code}: "
+        f"{smoothiefroot_response.text[:300]}"
+    )
 
         except requests.RequestException as error:
             st.error(f"Could not retrieve SmoothieFroot data: {error}")
