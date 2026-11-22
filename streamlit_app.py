@@ -28,16 +28,37 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# Mostrar los datos de SmoothieFroot dentro del ciclo
+# Construir la lista de ingredientes y mostrar SmoothieFroot
+ingredients_string = ""
+
 if ingredients_list:
-    ingredients_string = ''
+    st.subheader("SmoothieFroot nutrition information")
 
     for fruit_chosen in ingredients_list:
-        ingredients_string += fruit_chisen + ''
-        smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+        ingredients_string += fruit_chosen + " "
 
-    )
+        try:
+            smoothiefroot_response = requests.get(
+                "https://my.smoothiefroot.com/api/fruit/watermelon",
+                headers={"Accept": "application/json"},
+                timeout=15
+            )
+            smoothiefroot_response.raise_for_status()
+
+            st.dataframe(
+                data=smoothiefroot_response.json(),
+                width="stretch"
+            )
+
+        except requests.HTTPError as error:
+            response = error.response
+            if response is not None:
+                st.error(
+                    f"SmoothieFroot returned HTTP "
+                    f"{response.status_code}: {response.text[:300]}"
+                )
+            else:
+                st.error(f"Could not retrieve SmoothieFroot data: {error}")
 
         except requests.RequestException as error:
             st.error(f"Could not retrieve SmoothieFroot data: {error}")
@@ -52,8 +73,6 @@ if st.button("Submit Order"):
     elif not ingredients_list:
         st.warning("Please choose at least one ingredient.")
     else:
-        ingredients_string = " ".join(ingredients_list)
-
         insert_stmt = """
             INSERT INTO SMOOTHIES.PUBLIC.ORDERS
                 (INGREDIENTS, NAME_ON_ORDER)
@@ -62,7 +81,7 @@ if st.button("Submit Order"):
 
         session.sql(
             insert_stmt,
-            params=[ingredients_string, name_on_order.strip()]
+            params=[ingredients_string.strip(), name_on_order.strip()]
         ).collect()
 
         st.success(
