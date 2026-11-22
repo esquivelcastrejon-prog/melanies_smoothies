@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+from urllib.parse import quote
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -28,20 +29,28 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
-# Construir la lista de ingredientes y mostrar SmoothieFroot
+# Consultar SmoothieFroot para cada fruta elegida
 ingredients_string = ""
 
 if ingredients_list:
-    st.subheader("SmoothieFroot nutrition information")
-
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
-        st.subheader(fruit_chisen +' Nutrition Informatio')
+
+        st.subheader(f"{fruit_chosen} Nutrition Information")
 
         try:
+            fruit_path = quote(fruit_chosen.strip(), safe="")
             smoothiefroot_response = requests.get(
-                "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen)
-               sf_df = st.datafram(data=smoothiefroot_responde.json(), use_container_width=True)
+                f"https://my.smoothiefroot.com/api/fruit/{fruit_path}",
+                headers={"Accept": "application/json"},
+                timeout=15
+            )
+            smoothiefroot_response.raise_for_status()
+
+            st.dataframe(
+                data=smoothiefroot_response.json(),
+                width="stretch"
+            )
 
         except requests.HTTPError as error:
             response = error.response
