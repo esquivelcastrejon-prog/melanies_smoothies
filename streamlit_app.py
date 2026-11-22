@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 from snowflake.snowpark.functions import col
 
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -49,3 +50,8 @@ if st.button("Submit Order"):
             f"Your Smoothie is ordered, {name_on_order.strip()}!",
             icon="✅"
         )
+     # Consultar la información de la sandía en SmoothieFroot
+        smoothiefruit_response = requests.get(
+        "https://my.smoothiefruit.com/api/fruit/watermelon"
+)
+   st.text(smoothiefruit_response)
