@@ -36,10 +36,11 @@ if ingredients_list:
 
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + " "
+        st.subheader(fruit_chisen +' Nutrition Informatio')
 
         try:
             smoothiefroot_response = requests.get(
-                "https://my.smoothiefroot.com/api/fruit/watermelon",
+                "https://my.smoothiefroot.com/api/fruit/" + fruit_chosen),
                 headers={"Accept": "application/json"},
                 timeout=15
             )
