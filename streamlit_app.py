@@ -38,17 +38,7 @@ if ingredients_list:
     "https://my.smoothiefroot.com/api/fruit/watermelon",
     headers={"Accept": "application/json"},
     timeout=15
-)
 
-if smoothiefroot_response.ok:
-    st.dataframe(
-        data=smoothiefroot_response.json(),
-        width="stretch"
-    )
-else:
-    st.error(
-        f"SmoothieFroot respondió HTTP {smoothiefroot_response.status_code}: "
-        f"{smoothiefroot_response.text[:300]}"
     )
 
         except requests.RequestException as error:
