@@ -58,7 +58,7 @@ st.subheader("Watermelon nutrition information")
 
 try:
     smoothiefruit_response = requests.get(
-        "https://my.smoothiefruit.com/api/fruit/watermelon",
+        "https://my.smoothiefroot.com/api/fruit/watermelon",
         timeout=15
     )
     smoothiefruit_response.raise_for_status()
