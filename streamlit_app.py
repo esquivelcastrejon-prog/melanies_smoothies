@@ -5,6 +5,7 @@ from snowflake.snowpark.functions import col
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
 st.write("Choose the fruits you want in your custom Smoothie!")
 
+# Nombre del pedido
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
@@ -12,7 +13,7 @@ st.write("The name on your Smoothie will be:", name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Cargar las opciones de frutas
+# Cargar las opciones de frutas desde Snowflake
 fruit_rows = (
     session.table("SMOOTHIES.PUBLIC.FRUIT_OPTIONS")
     .select(col("FRUIT_NAME"))
@@ -27,6 +28,7 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
+# Registrar el pedido
 if st.button("Submit Order"):
     if not name_on_order.strip():
         st.warning("Please enter a name for the order.")
@@ -50,8 +52,22 @@ if st.button("Submit Order"):
             f"Your Smoothie is ordered, {name_on_order.strip()}!",
             icon="✅"
         )
-     # Consultar la información de la sandía en SmoothieFroot
-        smoothiefruit_response = requests.get(
-        "https://my.smoothiefruit.com/api/fruit/watermelon"
-)
-   st.text(smoothiefruit_response)
+
+# Consultar y mostrar información de la sandía desde SmoothieFroot
+st.subheader("Watermelon nutrition information")
+
+try:
+    smoothiefruit_response = requests.get(
+        "https://my.smoothiefruit.com/api/fruit/watermelon",
+        timeout=15
+    )
+    smoothiefruit_response.raise_for_status()
+    smoothiefruit_data = smoothiefruit_response.json()
+
+    st.dataframe([smoothiefruit_data], use_container_width=True)
+
+except requests.RequestException as error:
+    st.error(f"Could not retrieve information from SmoothieFroot: {error}")
+
+except ValueError:
+    st.error("SmoothieFroot returned a response that is not valid JSON.")
